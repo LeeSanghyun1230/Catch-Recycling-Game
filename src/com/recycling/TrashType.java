@@ -4,3 +4,4 @@ public enum TrashType {
     CAN,       // 캔
     PLASTIC    // 플라스틱
 }
+
