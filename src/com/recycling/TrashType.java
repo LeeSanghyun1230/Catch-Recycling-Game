@@ -1,3 +1,4 @@
+package com.recycling;
 public enum TrashType {
     GENERAL,   // 일반쓰레기
     VINYL,     // 비닐
