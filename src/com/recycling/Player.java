@@ -1,5 +1,9 @@
 package com.recycling;
 
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Rectangle;
+
 public class Player {
     int x, y;
     int width;
