@@ -42,3 +42,4 @@ public class Trash {
         g.setColor(Color.WHITE);
         g.drawString(type.name(), x + 5, y + 20);
     }
+}
