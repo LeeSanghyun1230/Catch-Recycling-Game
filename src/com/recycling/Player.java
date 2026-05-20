@@ -2,7 +2,10 @@ package com.recycling;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.Rectangle;
+import javax.swing.ImageIcon;
+
 
 public class Player {
     int x, y;
@@ -11,6 +14,9 @@ public class Player {
     int speed;
     TrashType selectedType;
 
+    //이미지 삽입
+    private Image image;
+
     public Player(int x, int y, int width, int height, int speed, TrashType selectedType) {
         this.x = x;
         this.y = y;
@@ -18,6 +24,11 @@ public class Player {
         this.height = height;
         this.speed = speed;
         this.selectedType = selectedType;
+
+        String imagePath = "/com/recycling/images/player_"
+                + selectedType.name().toLowerCase() + ".png";
+
+        image = new ImageIcon(getClass().getResource(imagePath)).getImage();
     }
 
     public void moveLeft() {
@@ -44,9 +55,14 @@ public class Player {
 
     // 2. 화면 출력용: GamePanel이 "플레이어 그려줘!" 할 때 실행되는 메소드
     public void draw(Graphics g) {
-        // 플레이어 몸통을 파란색 네모로 그립니다. (나중에 캐릭터 이미지로 바꿀 수 있습니다!)
-        g.setColor(Color.BLUE);
-        g.fillRect(x, y, width, height);
+        // [수정] 파란 네모 대신 이미지를 그림
+        if (image != null) {
+            g.drawImage(image, x, y, width, height, null);
+        } else {
+            // [예비] 혹시 이미지가 안 불러와졌을 때만 파란 네모 표시
+            g.setColor(Color.BLUE);
+            g.fillRect(x, y, width, height);
+        }
 
         // 플레이어 머리 위에 자신이 어떤 쓰레기를 모아야 하는지 글씨로 띄워줍니다.
         g.setColor(Color.WHITE); // 텍스트 색상
