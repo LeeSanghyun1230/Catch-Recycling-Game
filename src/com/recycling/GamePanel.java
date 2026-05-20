@@ -10,6 +10,9 @@ public class GamePanel extends JPanel implements ActionListener {
 
     private GameFrame frame;
 
+    // [추가] 게임 배경 이미지
+    private Image backgroundImage;
+
     // 1. 게임 상태 변수
     private int score = 0;
     private int lives = 3;
@@ -28,6 +31,11 @@ public class GamePanel extends JPanel implements ActionListener {
         this.frame = frame;
         this.selectedType = TrashType.values()[typeIndex];
 
+        // [추가] 배경 이미지 불러오기
+        backgroundImage = new ImageIcon(
+                getClass().getResource("/com/recycling/images/background.png")
+        ).getImage();
+
         // 플레이어 초기화
         this.player = new Player(350, 450, 50, 50, 15, selectedType);
         this.trashList = new ArrayList<>();
@@ -45,14 +53,14 @@ public class GamePanel extends JPanel implements ActionListener {
             }
         });
 
-        // ✨ 핵심: 마우스 클릭 없이 자동으로 키보드 포커스를 잡아주는 리스너
+        // 핵심: 마우스 클릭 없이 자동으로 키보드 포커스를 잡아주는 리스너
         addHierarchyListener(e -> {
             if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
-                requestFocusInWindow(); // 화면이 나타나는 순간 포커스 요청
+                requestFocusInWindow();
             }
         });
 
-        setFocusable(true); // 패널이 포커스를 받을 수 있는 상태로 설정
+        setFocusable(true);
 
         // 게임 루프 시작
         gameTimer = new Timer(20, this);
@@ -126,6 +134,11 @@ public class GamePanel extends JPanel implements ActionListener {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+
+        // [추가] 배경 이미지를 게임 화면 크기에 맞게 그림
+        if (backgroundImage != null) {
+            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+        }
 
         if (player != null) {
             player.draw(g);
