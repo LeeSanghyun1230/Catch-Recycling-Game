@@ -6,7 +6,6 @@ import java.awt.Image;
 import java.awt.Rectangle;
 import javax.swing.ImageIcon;
 
-
 public class Player {
     int x, y;
     int width;
@@ -14,7 +13,7 @@ public class Player {
     int speed;
     TrashType selectedType;
 
-    //이미지 삽입
+    // 이미지 삽입
     private Image image;
 
     public Player(int x, int y, int width, int height, int speed, TrashType selectedType) {
@@ -44,29 +43,23 @@ public class Player {
             x = panelWidth - width;
         }
     }
-// =======================================================
-    // 🚀 GamePanel과의 완벽한 연동을 위해 추가된 필수 기능들 🚀
-    // =======================================================
 
     // 1. 충돌 판정용: 플레이어의 현재 위치와 크기를 사각형(Rectangle)으로 만들어 반환
     public Rectangle getBounds() {
         return new Rectangle(x, y, width, height);
     }
 
-    // 2. 화면 출력용: GamePanel이 "플레이어 그려줘!" 할 때 실행되는 메소드
+    // 2. 화면 출력용: GamePanel이 플레이어를 그릴 때 실행되는 메소드
     public void draw(Graphics g) {
-        // [수정] 파란 네모 대신 이미지를 그림
+        // 파란 네모 대신 이미지를 그림
         if (image != null) {
             g.drawImage(image, x, y, width, height, null);
         } else {
-            // [예비] 혹시 이미지가 안 불러와졌을 때만 파란 네모 표시
+            // 혹시 이미지가 안 불러와졌을 때만 파란 네모 표시
             g.setColor(Color.BLUE);
             g.fillRect(x, y, width, height);
         }
 
-        // 플레이어 머리 위에 자신이 어떤 쓰레기를 모아야 하는지 글씨로 띄워줍니다.
-        g.setColor(Color.WHITE); // 텍스트 색상
-        g.setFont(new java.awt.Font("맑은 고딕", java.awt.Font.BOLD, 12));
-        g.drawString(selectedType.name() + " 수거자", x, y - 5);
+        // [삭제됨] 캐릭터 위에 글씨를 출력하던 코드 제거
     }
 }

@@ -37,7 +37,10 @@ public class GamePanel extends JPanel implements ActionListener {
         ).getImage();
 
         // 플레이어 초기화
-        this.player = new Player(350, 450, 50, 50, 15, selectedType);
+        // [수정] 플레이어 이미지 크기 50x50 -> 80x80
+        // [수정] y 위치 450 -> 430, 크기가 커져서 화면 아래로 나가지 않게 조정
+        this.player = new Player(350, 430, 80, 80, 15, selectedType);
+
         this.trashList = new ArrayList<>();
 
         // 3. 키보드 입력 이벤트
@@ -80,12 +83,18 @@ public class GamePanel extends JPanel implements ActionListener {
         spawnCounter++;
         if (spawnCounter >= 50) {
             int panelWidth = getWidth() > 50 ? getWidth() : 800;
-            int x = random.nextInt(panelWidth - 50);
+
+            // [수정] 쓰레기 크기 40 -> 65
+            int trashSize = 65;
+
+            // [수정] 쓰레기가 오른쪽 화면 밖으로 나가지 않게 trashSize 기준으로 계산
+            int x = random.nextInt(panelWidth - trashSize);
 
             TrashType[] types = TrashType.values();
             TrashType randomType = types[random.nextInt(types.length)];
 
-            trashList.add(new Trash(x, 0, 40, randomType));
+            // [수정] 쓰레기 이미지 크기 40 -> 65
+            trashList.add(new Trash(x, 0, trashSize, randomType));
             spawnCounter = 0;
         }
     }

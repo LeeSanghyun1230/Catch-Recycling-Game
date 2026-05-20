@@ -50,9 +50,5 @@ public class Trash {
             g.setColor(Color.DARK_GRAY);
             g.fillRect(x, y, size, size);
         }
-
-        // 어떤 쓰레기인지 글씨로 표시
-        g.setColor(Color.WHITE);
-        g.drawString(type.name(), x + 5, y + 20);
     }
 }
