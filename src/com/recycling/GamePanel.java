@@ -10,8 +10,8 @@ public class GamePanel extends JPanel implements ActionListener {
 
     private GameFrame frame;
 
-    // [추가] 게임 배경 이미지
-    private Image backgroundImage;
+    // ✨ [수정] 단일 배경 대신, 4단계 배경 이미지를 담을 배열로 변경
+    private Image[] backgroundStages = new Image[4];
 
     // 1. 게임 상태 변수
     private int score = 0;
@@ -19,7 +19,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private int fallSpeed = 5;
     private TrashType selectedType;
     private boolean isGameOver = false;
-    // ✨ 부활 기회를 썼는지 안 썼는지 기억하는 변수 추가!
+    // 부활 기회를 썼는지 안 썼는지 기억하는 변수 추가!
     private boolean hasRevived = false;
 
     // 2. 게임 객체
@@ -33,16 +33,19 @@ public class GamePanel extends JPanel implements ActionListener {
         this.frame = frame;
         this.selectedType = TrashType.values()[typeIndex];
 
-        // [추가] 배경 이미지 불러오기
-        backgroundImage = new ImageIcon(
-                getClass().getResource("/com/recycling/images/background.png")
-        ).getImage();
+        // ✨ [수정] 4단계 배경 이미지 미리 불러오기 (bg_stage1 ~ bg_stage4)
+        for (int i = 0; i < 4; i++) {
+            String bgPath = "/com/recycling/images/bg_stage" + (i + 1) + ".png";
+            try {
+                backgroundStages[i] = new ImageIcon(getClass().getResource(bgPath)).getImage();
+            } catch (Exception e) {
+                System.err.println("⚠️ 배경 이미지를 찾을 수 없습니다: " + bgPath);
+            }
+        }
 
         // 플레이어 초기화
-        // [수정] 플레이어 이미지 크기 50x50 -> 80x80
-        // [수정] y 위치 450 -> 430, 크기가 커져서 화면 아래로 나가지 않게 조정
+        // 플레이어 이미지 크기 80x80, y 위치 430
         this.player = new Player(350, 430, 80, 80, 15, selectedType);
-
         this.trashList = new ArrayList<>();
 
         // 3. 키보드 입력 이벤트
@@ -86,16 +89,16 @@ public class GamePanel extends JPanel implements ActionListener {
         if (spawnCounter >= 50) {
             int panelWidth = getWidth() > 50 ? getWidth() : 800;
 
-            // [수정] 쓰레기 크기 40 -> 65
+            // 쓰레기 크기 65
             int trashSize = 65;
 
-            // [수정] 쓰레기가 오른쪽 화면 밖으로 나가지 않게 trashSize 기준으로 계산
+            // 쓰레기가 오른쪽 화면 밖으로 나가지 않게 trashSize 기준으로 계산
             int x = random.nextInt(panelWidth - trashSize);
 
             TrashType[] types = TrashType.values();
             TrashType randomType = types[random.nextInt(types.length)];
 
-            // [수정] 쓰레기 이미지 크기 40 -> 65
+            // 쓰레기 생성
             trashList.add(new Trash(x, 0, trashSize, randomType));
             spawnCounter = 0;
         }
@@ -214,13 +217,29 @@ public class GamePanel extends JPanel implements ActionListener {
             frame.changePanel(new ResultPanel(frame, score));
         }
     }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // [추가] 배경 이미지를 게임 화면 크기에 맞게 그림
-        if (backgroundImage != null) {
-            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+        // ✨ [추가] 점수에 따라 어떤 배경을 그릴지 결정하는 로직
+        Image currentBg = backgroundStages[0]; // 기본 1단계 배경 (쓰레기 가득)
+
+        if (score >= 150) {
+            currentBg = backgroundStages[3]; // 4단계: 150점 이상 (엄청 깨끗한 자연)
+        } else if (score >= 100) {
+            currentBg = backgroundStages[2]; // 3단계: 100점 이상 (많이 깨끗해짐)
+        } else if (score >= 50) {
+            currentBg = backgroundStages[1]; // 2단계: 50점 이상 (쓰레기 조금 사라짐)
+        }
+
+        // 결정된 배경 이미지를 게임 화면 크기에 맞게 그림
+        if (currentBg != null) {
+            g.drawImage(currentBg, 0, 0, getWidth(), getHeight(), this);
+        } else {
+            // 방어 코드: 배경이 없을 때 흰색 바탕
+            g.setColor(Color.WHITE);
+            g.fillRect(0, 0, getWidth(), getHeight());
         }
 
         if (player != null) {
@@ -231,6 +250,7 @@ public class GamePanel extends JPanel implements ActionListener {
             t.draw(g);
         }
 
+        // 텍스트 글씨가 배경에 묻히지 않게 하려면 색상을 흰색 등으로 바꾸셔도 좋습니다!
         g.setColor(Color.BLACK);
         g.setFont(new Font("맑은 고딕", Font.BOLD, 16));
         g.drawString("Target Type: " + selectedType.name(), 10, 20);
