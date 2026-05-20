@@ -21,27 +21,33 @@ public class Trash {
 
         Random random = new Random();
 
-        // 기본 이미지 파일명 규칙 (예: trash_can.png)
+        // 기본 이미지 파일명 규칙 (예: trash_general)
         String imageFileName = "trash_" + type.name().toLowerCase();
 
-        // 💡 핵심 로직: 일반쓰레기(인덱스 0번)일 경우, 10가지 헷갈리는 아이템 중 랜덤 선택!
+        // 💡 일반쓰레기(인덱스 0번)일 경우
         if (type.ordinal() == 0) {
-            String[] trickNames = {
-                    "   양파껍질", "    계란껍질", "    오염된 컵라면", " 영수증", " 치킨뼈",
-                    "   조개껍데기", "   아이스팩", "    칫솔", "  깨진 유리", "   물티슈"
-            };
-            // 이미지 파일 이름 매칭용 배열
-            String[] trickFiles = {
-                    "trick_onion", "trick_egg", "trick_noodle", "trick_receipt", "trick_bone",
-                    "trick_clam", "trick_icepack", "trick_toothbrush", "trick_glass", "trick_wetwipe"
-            };
 
-            // 0부터 9 사이의 랜덤 숫자 뽑기
-            int r = random.nextInt(trickNames.length);
-            this.itemName = trickNames[r];           // 화면에 띄울 한글 이름 저장
-            imageFileName = trickFiles[r];           // 불러올 영어 파일명 변경
+            // ✨ 추가된 핵심 로직: random.nextInt(10)을 쓰면 0~9까지 숫자가 나옵니다.
+            // 즉, 5보다 작을 때(0, 1, 2, 3, 4)만 함정이 나오게 해서 '50% 확률'을 만듭니다!
+            if (random.nextInt(10) < 5) {
+                String[] trickNames = {
+                        "양파껍질", "계란껍질", "오염된 컵라면", "영수증", "치킨뼈",
+                        "조개껍데기", "아이스팩", "칫솔", "깨진 유리", "물티슈"
+                };
+                String[] trickFiles = {
+                        "trick_onion", "trick_egg", "trick_noodle", "trick_receipt", "trick_bone",
+                        "trick_clam", "trick_icepack", "trick_toothbrush", "trick_glass", "trick_wetwipe"
+                };
+
+                int r = random.nextInt(trickNames.length);
+                this.itemName = trickNames[r];
+                imageFileName = trickFiles[r];
+            } else {
+                // 나머지 50% 확률일 때는 평범한 일반 쓰레기가 나옵니다.
+                // (선택) 평범한 쓰레기 위에도 이름을 띄우고 싶다면 아래 주석을 푸세요!
+                // this.itemName = "일반쓰레기";
+            }
         }
-
         // 완성된 이미지 경로 만들기
         String imagePath = "/com/recycling/images/" + imageFileName + ".png";
 

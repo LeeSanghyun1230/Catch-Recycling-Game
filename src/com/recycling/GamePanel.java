@@ -88,18 +88,30 @@ public class GamePanel extends JPanel implements ActionListener {
         spawnCounter++;
         if (spawnCounter >= 50) {
             int panelWidth = getWidth() > 50 ? getWidth() : 800;
-
-            // 쓰레기 크기 65
             int trashSize = 65;
-
-            // 쓰레기가 오른쪽 화면 밖으로 나가지 않게 trashSize 기준으로 계산
-            int x = random.nextInt(panelWidth - trashSize);
-
             TrashType[] types = TrashType.values();
-            TrashType randomType = types[random.nextInt(types.length)];
 
-            // 쓰레기 생성
-            trashList.add(new Trash(x, 0, trashSize, randomType));
+            // ✨ 한 번에 생성할 개수
+            int spawnCount = 2;
+
+            // ✨ 화면을 생성할 개수만큼 N등분 합니다. (2개면 화면을 반으로 나눔)
+            int sectionWidth = panelWidth / spawnCount;
+
+            for (int i = 0; i < spawnCount; i++) {
+                // 구역의 시작점 계산 (i=0이면 0부터, i=1이면 절반부터)
+                int startX = i * sectionWidth;
+
+                // 해당 구역 안에서 쓰레기가 화면 밖으로 나가지 않게 랜덤 값 뽑기
+                int maxRandom = sectionWidth - trashSize;
+                if (maxRandom <= 0) maxRandom = 1; // 화면이 너무 작을 때를 대비한 안전장치
+
+                // 시작점 + 구역 내 랜덤 위치
+                int x = startX + random.nextInt(maxRandom);
+
+                TrashType randomType = types[random.nextInt(types.length)];
+                trashList.add(new Trash(x, 0, trashSize, randomType));
+            }
+
             spawnCounter = 0;
         }
     }
@@ -136,7 +148,7 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     private void adjustDifficulty() {
-        fallSpeed = 5 + (score / 50);
+        fallSpeed = 4 + (score / 50);
     }
 
     private void gameOver() {
