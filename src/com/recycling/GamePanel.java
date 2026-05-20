@@ -186,7 +186,7 @@ public class GamePanel extends JPanel implements ActionListener {
             int choice = JOptionPane.showOptionDialog(
                     this,
                     questions[qIdx],
-                    "교육용 분리수거 퀴즈",
+                    " 분리수거 퀴즈",
                     JOptionPane.DEFAULT_OPTION,
                     JOptionPane.QUESTION_MESSAGE,
                     null,
