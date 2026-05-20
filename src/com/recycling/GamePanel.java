@@ -19,6 +19,8 @@ public class GamePanel extends JPanel implements ActionListener {
     private int fallSpeed = 5;
     private TrashType selectedType;
     private boolean isGameOver = false;
+    // ✨ 부활 기회를 썼는지 안 썼는지 기억하는 변수 추가!
+    private boolean hasRevived = false;
 
     // 2. 게임 객체
     private Player player;
@@ -135,11 +137,83 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     private void gameOver() {
-        isGameOver = true;
-        gameTimer.stop();
-        frame.changePanel(new ResultPanel(frame, score));
-    }
+        gameTimer.stop(); // 게임 일시 정지
 
+        if (!hasRevived) {
+            // 1. 8개의 퀴즈 문제 목록
+            String[] questions = {
+                    "💡 [부활 찬스] 양파 껍질, 대파 뿌리의 올바른 배출 방법은?",
+                    "💡 [부활 찬스] 국물이 배어 지워지지 않는 컵라면 용기는?",
+                    "💡 [부활 찬스] 마트 영수증이나 택배 전표는 어디에 버려야 할까요?",
+                    "💡 [부활 찬스] 맛있게 먹고 남은 치킨 뼈와 돼지갈비 뼈는?",
+                    "💡 [부활 찬스] 물컹물컹한 젤 형태의 아이스팩 버리는 방법은?",
+                    "💡 [부활 찬스] 다 쓴 칫솔은 어떻게 버려야 할까요?",
+                    "💡 [부활 찬스] 실수로 깬 유리컵을 버리는 가장 올바른 방법은?",
+                    "💡 [부활 찬스] 사용하고 난 물티슈의 올바른 배출 방법은?"
+            };
+
+            // 2. 각 문제의 3가지 선택지 (버튼으로 나옴)
+            String[][] options = {
+                    {"음식물쓰레기", "일반쓰레기", "퇴비로 사용"},                  // 1번 문제 보기
+                    {"일반쓰레기", "플라스틱류", "스티로폼류"},                   // 2번 문제 보기
+                    {"종이류", "비닐류", "일반쓰레기"},                           // 3번 문제 보기
+                    {"일반쓰레기", "음식물쓰레기", "플라스틱류"},                  // 4번 문제 보기
+                    {"하수구에 짜서 버림", "통째로 일반쓰레기", "비닐류로 배출"}, // 5번 문제 보기
+                    {"플라스틱류", "일반쓰레기", "고철류"},                       // 6번 문제 보기
+                    {"유리수거함에 넣는다", "신문지에 싸서 일반쓰레기", "플라스틱류에 넣는다"}, // 7번 문제 보기
+                    {"종이류", "변기에 버린다", "일반쓰레기"}                      // 8번 문제 보기
+            };
+
+            // 3. 각 문제의 정답 번호 (0번째, 1번째, 2번째 버튼 중 어느 것인지)
+            int[] answers = {1, 0, 2, 0, 1, 1, 1, 2};
+
+            // 4. 정답 또는 오답 시 보여줄 해설 (교육 효과!)
+            String[] explanations = {
+                    "양파/마늘 껍질 등은 동물의 사료로 쓸 수 없어 '일반쓰레기'입니다.",
+                    "음식물이 배어 씻어도 지워지지 않는 컵라면 용기는 재활용이 안 돼서 '일반쓰레기'입니다.",
+                    "영수증은 열에 반응하는 특수 코팅 종이(감열지)라서 '일반쓰레기'입니다.",
+                    "치킨 뼈, 돼지 뼈, 조개 껍데기 등은 딱딱해서 사료로 못 쓰기 때문에 '일반쓰레기'입니다.",
+                    "젤 형태의 아이스팩 내용물은 미세플라스틱이라 하수구에 버리면 안 되고 '일반쓰레기'로 버려야 합니다.",
+                    "칫솔은 고무 등 여러 재질이 섞인 복합 플라스틱이라 재활용이 안 되어 '일반쓰레기'입니다.",
+                    "깨진 유리는 재활용이 불가능하므로, 다치지 않게 신문지에 싸서 '일반쓰레기'로 버려야 합니다.",
+                    "물티슈는 종이가 아니라 합성수지(플라스틱) 재질이 포함되어 있어 '일반쓰레기'입니다."
+            };
+
+            // 🎲 0부터 7 사이의 숫자 중 하나를 랜덤으로 뽑습니다!
+            int qIdx = random.nextInt(questions.length);
+
+            // 선택된 랜덤 문제로 팝업창을 띄웁니다.
+            int choice = JOptionPane.showOptionDialog(
+                    this,
+                    questions[qIdx],
+                    "교육용 분리수거 퀴즈",
+                    JOptionPane.DEFAULT_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    options[qIdx],
+                    options[qIdx][0]
+            );
+
+            // 결과 처리 로직
+            if (choice == answers[qIdx]) {
+                // 정답을 맞췄을 때
+                JOptionPane.showMessageDialog(this, "정답입니다! 🎉\n" + explanations[qIdx] + "\n\n목숨을 1개 얻고 게임을 다시 시작합니다.");
+                lives = 1;
+                hasRevived = true;
+                gameTimer.start(); // 게임 다시 시작
+            } else {
+                // 틀렸거나 창을 껐을 때
+                JOptionPane.showMessageDialog(this, "오답입니다! 😢\n" + explanations[qIdx] + "\n\n게임을 종료합니다.");
+                isGameOver = true;
+                frame.changePanel(new ResultPanel(frame, score)); // 결과 창으로 이동
+            }
+        }
+        // 이미 한 번 부활했는데 또 죽은 경우
+        else {
+            isGameOver = true;
+            frame.changePanel(new ResultPanel(frame, score));
+        }
+    }
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
