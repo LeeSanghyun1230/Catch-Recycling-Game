@@ -233,7 +233,10 @@ public class GamePanel extends JPanel implements ActionListener {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-
+        if (player != null && getHeight() > 0) {
+            // 화면 높이에서 100(캐릭터 크기+여백)을 뺀 위치를 Y좌표로 설정
+            player.y = getHeight() - 100;
+        }
         // ✨ [추가] 점수에 따라 어떤 배경을 그릴지 결정하는 로직
         Image currentBg = backgroundStages[0]; // 기본 1단계 배경 (쓰레기 가득)
 
