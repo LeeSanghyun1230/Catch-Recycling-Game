@@ -5,6 +5,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Random;
+import java.awt.Desktop;
+import java.net.URI;
 
 public class GamePanel extends JPanel implements ActionListener {
 
@@ -197,17 +199,26 @@ public class GamePanel extends JPanel implements ActionListener {
             // 🎲 0부터 7 사이의 숫자 중 하나를 랜덤으로 뽑습니다!
             int qIdx = random.nextInt(questions.length);
 
+
+            // 👇👇👇 [여기에 추가!] 팝업창 폰트 크기를 키워서 창 전체를 크게 만드는 마법의 코드 👇👇👇
+            UIManager.put("OptionPane.messageFont", new Font("맑은 고딕", Font.BOLD, 18)); // 문제 글씨 크기 (원하는 대로 조절)
+            UIManager.put("OptionPane.buttonFont", new Font("맑은 고딕", Font.PLAIN, 16)); // 버튼 글씨 크기
+            // 👆👆👆 ------------------------------------------------------------------------ 👆👆👆
+
             // 선택된 랜덤 문제로 팝업창을 띄웁니다.
             int choice = JOptionPane.showOptionDialog(
                     this,
                     questions[qIdx],
-                    " 분리수거 퀴즈",
+                    " ♻️ 분리수거 퀴즈",
                     JOptionPane.DEFAULT_OPTION,
                     JOptionPane.QUESTION_MESSAGE,
                     null,
                     options[qIdx],
                     options[qIdx][0]
             );
+
+
+            // ... (위쪽 문제 출력 및 팝업창 띄우는 코드는 그대로 둡니다) ...
 
             // 결과 처리 로직
             if (choice == answers[qIdx]) {
@@ -219,12 +230,40 @@ public class GamePanel extends JPanel implements ActionListener {
             } else {
                 // 틀렸거나 창을 껐을 때
                 JOptionPane.showMessageDialog(this, "오답입니다! 😢\n" + explanations[qIdx] + "\n\n게임을 종료합니다.");
+
+                // 👇👇👇 [추가된 안내 팝업] 웹사이트 이동 전 미리 알려주기 👇👇👇
+                JOptionPane.showMessageDialog(this, "분리수거에 관한 정보에 대해 알려주는 사이트로 이동합니다.", "안내", JOptionPane.INFORMATION_MESSAGE);
+                // 👆👆👆 -------------------------------------------------- 👆👆👆
+
+                // 웹사이트 열기
+                try {
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop.getDesktop().browse(new URI("https://www.me.go.kr/home/web/policy_data/read.do?menuId=10262&seq=7984"));
+                    }
+                } catch (Exception ex) {
+                    System.out.println("웹사이트를 열 수 없습니다.");
+                }
+
                 isGameOver = true;
                 frame.changePanel(new ResultPanel(frame, score)); // 결과 창으로 이동
             }
         }
         // 이미 한 번 부활했는데 또 죽은 경우
         else {
+
+            // 👇👇👇 [추가된 안내 팝업] 부활 못하고 죽었을 때도 안내 문구 띄우기 👇👇👇
+            JOptionPane.showMessageDialog(this, "분리수거에 관한 정보에 대해 알려주는 사이트로 이동합니다.", "안내", JOptionPane.INFORMATION_MESSAGE);
+            // 👆👆👆 -------------------------------------------------- 👆👆👆
+
+            // 웹사이트 열기
+            try {
+                if (Desktop.isDesktopSupported()) {
+                    Desktop.getDesktop().browse(new URI("https://www.me.go.kr/home/web/policy_data/read.do?menuId=10262&seq=7984"));
+                }
+            } catch (Exception ex) {
+                System.out.println("웹사이트를 열 수 없습니다.");
+            }
+
             isGameOver = true;
             frame.changePanel(new ResultPanel(frame, score));
         }
