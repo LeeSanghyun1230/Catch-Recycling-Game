@@ -172,14 +172,14 @@ public class GamePanel extends JPanel implements ActionListener {
         if (!hasRevived) {
             // 1. 8개의 퀴즈 문제 목록
             String[] questions = {
-                    "💡 [부활 찬스] 양파 껍질, 대파 뿌리의 올바른 배출 방법은?",
-                    "💡 [부활 찬스] 국물이 배어 지워지지 않는 컵라면 용기는?",
-                    "💡 [부활 찬스] 마트 영수증이나 택배 전표는 어디에 버려야 할까요?",
-                    "💡 [부활 찬스] 맛있게 먹고 남은 치킨 뼈와 돼지갈비 뼈는?",
-                    "💡 [부활 찬스] 물컹물컹한 젤 형태의 아이스팩 버리는 방법은?",
-                    "💡 [부활 찬스] 다 쓴 칫솔은 어떻게 버려야 할까요?",
-                    "💡 [부활 찬스] 실수로 깬 유리컵을 버리는 가장 올바른 방법은?",
-                    "💡 [부활 찬스] 사용하고 난 물티슈의 올바른 배출 방법은?"
+                    " [부활 찬스] 양파 껍질, 대파 뿌리의 올바른 배출 방법은?",
+                    " [부활 찬스] 국물이 배어 지워지지 않는 컵라면 용기는?",
+                    " [부활 찬스] 마트 영수증이나 택배 전표는 어디에 버려야 할까요?",
+                    " [부활 찬스] 맛있게 먹고 남은 치킨 뼈와 돼지갈비 뼈는?",
+                    " [부활 찬스] 물컹물컹한 젤 형태의 아이스팩 버리는 방법은?",
+                    " [부활 찬스] 다 쓴 칫솔은 어떻게 버려야 할까요?",
+                    " [부활 찬스] 실수로 깬 유리컵을 버리는 가장 올바른 방법은?",
+                    " [부활 찬스] 사용하고 난 물티슈의 올바른 배출 방법은?"
             };
 
             // 2. 각 문제의 3가지 선택지 (버튼으로 나옴)
@@ -231,7 +231,7 @@ public class GamePanel extends JPanel implements ActionListener {
             // 결과 처리 로직
             if (choice == answers[qIdx]) {
                 // 정답을 맞췄을 때
-                JOptionPane.showMessageDialog(this, "정답입니다! 🎉\n" + explanations[qIdx] + "\n\n목숨을 1개 얻고 게임을 다시 시작합니다.");
+                JOptionPane.showMessageDialog(this, "정답입니다! \n" + explanations[qIdx] + "\n\n목숨을 1개 얻고 게임을 다시 시작합니다.");
 
                 lives = 1;
                 hasRevived = true;
@@ -243,7 +243,7 @@ public class GamePanel extends JPanel implements ActionListener {
                 gameTimer.start(); // 게임 다시 시작
             } else {
                 // 틀렸거나 창을 껐을 때
-                JOptionPane.showMessageDialog(this, "오답입니다! 😢\n" + explanations[qIdx] + "\n\n게임을 종료합니다.");
+                JOptionPane.showMessageDialog(this, "오답입니다! \n" + explanations[qIdx] + "\n\n게임을 종료합니다.");
 
                 int confirm = JOptionPane.showConfirmDialog(this,
                         "분리수거에 관한 정보에 대해 알려주는 사이트로 이동하시겠습니까?",
@@ -298,12 +298,14 @@ public class GamePanel extends JPanel implements ActionListener {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+
+        // 1. [기존 로직 유지] 플레이어 Y좌표 설정
         if (player != null && getHeight() > 0) {
             // 화면 높이에서 100(캐릭터 크기+여백)을 뺀 위치를 Y좌표로 설정
             player.y = getHeight() - 100;
         }
 
-        // ✨ [추가] 점수에 따라 어떤 배경을 그릴지 결정하는 로직
+        // 2. [기존 로직 유지] 점수에 따라 어떤 배경을 그릴지 결정
         Image currentBg = backgroundStages[0]; // 기본 1단계 배경
 
         if (score >= 300) {
@@ -314,7 +316,7 @@ public class GamePanel extends JPanel implements ActionListener {
             currentBg = backgroundStages[1]; // 2단계
         }
 
-        // 결정된 배경 이미지를 게임 화면 크기에 맞게 그림
+        // 3. [기존 로직 유지] 배경 그리기
         if (currentBg != null) {
             g.drawImage(currentBg, 0, 0, getWidth(), getHeight(), this);
         } else {
@@ -323,6 +325,7 @@ public class GamePanel extends JPanel implements ActionListener {
             g.fillRect(0, 0, getWidth(), getHeight());
         }
 
+        // 4. [기존 로직 유지] 플레이어 및 쓰레기 그리기
         if (player != null) {
             player.draw(g);
         }
@@ -331,12 +334,61 @@ public class GamePanel extends JPanel implements ActionListener {
             t.draw(g);
         }
 
-        // 텍스트 글씨가 배경에 묻히지 않게 하려면 색상을 흰색 등으로 바꾸셔도 좋습니다!
-        g.setColor(Color.BLACK);
-        g.setFont(new Font("맑은 고딕", Font.BOLD, 16));
-        g.drawString("Target Type: " + selectedType.name(), 10, 20);
-        g.drawString("Score: " + score, 10, 40);
-        g.drawString("Lives: " + lives, 10, 60);
-        g.drawString("Speed: " + fallSpeed, 10, 80);
+        // 👇👇👇 [수정된 부분] UI 박스 및 한글 변환 텍스트 👇👇👇
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // 1. 박스 그리기
+        g2d.setColor(new Color(0, 0, 0, 160));
+        g2d.fillRoundRect(15, 15, 230, 120, 15, 15);
+
+        // 박스 테두리선 그리기
+        g2d.setColor(Color.WHITE);
+        g2d.setStroke(new BasicStroke(2));
+        g2d.drawRoundRect(15, 15, 230, 120, 15, 15);
+
+        // 2. 글꼴 설정
+        g2d.setFont(new Font("맑은 고딕", Font.BOLD, 15));
+        g2d.setColor(Color.WHITE);
+
+        // ✨ [핵심 추가] 영어 ENUM 이름을 한글로 번역하는 스위치(조건)문
+        String koreanType = "";
+        switch (selectedType.name()) {
+            case "PLASTIC":
+                koreanType = "플라스틱";
+                break;
+            case "CAN":
+                koreanType = "캔";
+                break;
+            case "PAPER":
+                koreanType = "종이";
+                break;
+            case "VINYL":
+                koreanType = "비닐";
+                break;
+            case "GENERAL":
+                koreanType = "일반쓰레기";
+                break;
+            case "GLASS":
+                koreanType = "유리병";
+                break;
+            default:
+                // 혹시 위에 없는 새로운 쓰레기 타입이 추가될 경우 영어 그대로 출력
+                koreanType = selectedType.name();
+                break;
+        }
+
+        // 3. 번역된 한글(koreanType)을 적용하여 문구 조립
+        String targetText = "수거 종류 : " + koreanType;
+        String scoreText  = "현재 점수 : " + score;
+        String livesText  = "남은 목숨 : " + lives;
+        String speedText  = "낙하 속도 : " + fallSpeed;
+
+        // 4. 글씨 그리기
+        g2d.drawString(targetText, 30, 40);
+        g2d.drawString(scoreText, 30, 65);
+        g2d.drawString(livesText, 30, 90);
+        g2d.drawString(speedText, 30, 115);
+        // 👆👆👆 -------------------------------------------------------- 👆👆👆
     }
 }
