@@ -218,8 +218,6 @@ public class GamePanel extends JPanel implements ActionListener {
             );
 
 
-            // ... (위쪽 문제 출력 및 팝업창 띄우는 코드는 그대로 둡니다) ...
-
             // 결과 처리 로직
             if (choice == answers[qIdx]) {
                 // 정답을 맞췄을 때
@@ -231,18 +229,18 @@ public class GamePanel extends JPanel implements ActionListener {
                 // 틀렸거나 창을 껐을 때
                 JOptionPane.showMessageDialog(this, "오답입니다! 😢\n" + explanations[qIdx] + "\n\n게임을 종료합니다.");
 
-                // 👇👇👇 [추가된 안내 팝업] 웹사이트 이동 전 미리 알려주기 👇👇👇
-                JOptionPane.showMessageDialog(this, "분리수거에 관한 정보에 대해 알려주는 사이트로 이동합니다.", "안내", JOptionPane.INFORMATION_MESSAGE);
-                // 👆👆👆 -------------------------------------------------- 👆👆👆
+                // 👇👇👇 [수정된 부분 1] 확인/취소를 선택할 수 있는 팝업창 띄우기 👇👇👇
+                int confirm = JOptionPane.showConfirmDialog(this,
+                        "분리수거에 관한 정보에 대해 알려주는 사이트로 이동하시겠습니까?",
+                        "안내",
+                        JOptionPane.OK_CANCEL_OPTION,
+                        JOptionPane.INFORMATION_MESSAGE);
 
-                // 웹사이트 열기
-                try {
-                    if (Desktop.isDesktopSupported()) {
-                        Desktop.getDesktop().browse(new URI("https://www.me.go.kr/home/web/policy_data/read.do?menuId=10262&seq=7984"));
-                    }
-                } catch (Exception ex) {
-                    System.out.println("웹사이트를 열 수 없습니다.");
+                // 사용자가 [확인]을 눌렀을 때(OK_OPTION)만 사이트를 엽니다!
+                if (confirm == JOptionPane.OK_OPTION) {
+                    openRandomInfoWebpage();
                 }
+                // 👆👆👆 ---------------------------------------------------- 👆👆👆
 
                 isGameOver = true;
                 frame.changePanel(new ResultPanel(frame, score)); // 결과 창으로 이동
@@ -251,23 +249,46 @@ public class GamePanel extends JPanel implements ActionListener {
         // 이미 한 번 부활했는데 또 죽은 경우
         else {
 
-            // 👇👇👇 [추가된 안내 팝업] 부활 못하고 죽었을 때도 안내 문구 띄우기 👇👇👇
-            JOptionPane.showMessageDialog(this, "분리수거에 관한 정보에 대해 알려주는 사이트로 이동합니다.", "안내", JOptionPane.INFORMATION_MESSAGE);
-            // 👆👆👆 -------------------------------------------------- 👆👆👆
+            // 👇👇👇 [수정된 부분 2] 부활 못하고 죽었을 때도 똑같이 적용 👇👇👇
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "분리수거에 관한 정보에 대해 알려주는 사이트로 이동하시겠습니까?",
+                    "안내",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.INFORMATION_MESSAGE);
 
-            // 웹사이트 열기
-            try {
-                if (Desktop.isDesktopSupported()) {
-                    Desktop.getDesktop().browse(new URI("https://www.me.go.kr/home/web/policy_data/read.do?menuId=10262&seq=7984"));
-                }
-            } catch (Exception ex) {
-                System.out.println("웹사이트를 열 수 없습니다.");
+            // 사용자가 [확인]을 눌렀을 때만 사이트를 엽니다!
+            if (confirm == JOptionPane.OK_OPTION) {
+                openRandomInfoWebpage();
             }
+            // 👆👆👆 ---------------------------------------------------- 👆👆👆
 
             isGameOver = true;
             frame.changePanel(new ResultPanel(frame, score));
         }
+    } // 👈 gameOver() 메소드가 끝나는 중괄호
+
+    // 👇👇👇 [새로 추가하는 메소드] 랜덤으로 웹사이트를 열어주는 전용 로직 👇👇👇
+    private void openRandomInfoWebpage() {
+        // 1. 보여주고 싶은 영상이나 사이트 주소 3개를 목록에 넣습니다. (쌍따옴표 안에 주소를 넣어주세요!)
+        String[] infoUrls = {
+                "https://www.youtube.com/shorts/pHhG5fClttw", //
+                "https://www.youtube.com/shorts/TJMzCXRylLI?si=DcYoljo-uaRipVIM",                             // 두 번째 주소 (원하는 유튜브 영상 링크로 교체!)
+                "youtube.com/shorts/UXpXtxaUcN0?si=qdOG4rfLbx_Rudir"                               // 세 번째 주소 (원하는 유튜브 영상 링크로 교체!)
+        };
+
+        // 2. 0, 1, 2 중 랜덤으로 숫자 하나를 뽑습니다.
+        int randomIdx = random.nextInt(infoUrls.length);
+
+        // 3. 뽑힌 숫자에 해당하는 주소를 인터넷 창으로 엽니다.
+        try {
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().browse(new URI(infoUrls[randomIdx]));
+            }
+        } catch (Exception ex) {
+            System.out.println("웹사이트를 열 수 없습니다.");
+        }
     }
+    // 👆👆👆 ------------------------------------------------------------- 👆👆👆
 
     @Override
     protected void paintComponent(Graphics g) {
