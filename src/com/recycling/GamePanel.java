@@ -123,14 +123,25 @@ public class GamePanel extends JPanel implements ActionListener {
             Trash t = trashList.get(i);
             t.fall(fallSpeed);
 
+            // 1. 플레이어와 쓰레기가 부딪혔을 때
             if (player.getBounds().intersects(t.getBounds())) {
-                checkCatch(t);
-                trashList.remove(i);
-                i--;
+                checkCatch(t); // 점수 판정 및 게임 오버 처리
+
+                // 👇👇👇 [수정된 부분] 안전 장치 추가 👇👇👇
+                // checkCatch 때문에 게임이 끝나서 trashList가 비워졌다면 지우지 않고 반복문을 끝냅니다.
+                if (!trashList.isEmpty() && i < trashList.size()) {
+                    trashList.remove(i);
+                    i--; // 지웠으니 인덱스를 하나 당겨줌
+                } else {
+                    break; // 리스트가 비었다면(게임 종료 등) 반복문 즉시 탈출!
+                }
+                // 👆👆👆 -------------------------------- 👆👆👆
                 continue;
             }
 
+            // 2. 쓰레기가 바닥으로 떨어졌을 때
             if (t.y > getHeight()) {
+                // 이때는 게임 오버로 갑자기 리스트가 비워질 일이 없으므로 기존대로 지워도 안전합니다.
                 trashList.remove(i);
                 i--;
             }
