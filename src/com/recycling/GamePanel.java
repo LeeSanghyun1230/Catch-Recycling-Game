@@ -137,6 +137,8 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     private void checkCatch(Trash t) {
+        // 페인트 스프레이는 Trash.java에서 type이 null로 설정됩니다.
+        // 그래서 어떤 캐릭터로 잡아도 selectedType과 같지 않아 오답 처리됩니다.
         if (t.getType() == selectedType) {
             score += 10;
         } else {
@@ -215,6 +217,11 @@ public class GamePanel extends JPanel implements ActionListener {
                 JOptionPane.showMessageDialog(this, "정답입니다! 🎉\n" + explanations[qIdx] + "\n\n목숨을 1개 얻고 게임을 다시 시작합니다.");
                 lives = 1;
                 hasRevived = true;
+
+                // 부활 직후 남아 있던 쓰레기 때문에 바로 다시 죽는 것을 막기 위해 화면을 비웁니다.
+                trashList.clear();
+                spawnCounter = 0;
+
                 gameTimer.start(); // 게임 다시 시작
             } else {
                 // 틀렸거나 창을 껐을 때
