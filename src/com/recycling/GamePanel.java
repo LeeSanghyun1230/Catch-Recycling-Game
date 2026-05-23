@@ -5,6 +5,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Random;
+import java.awt.Desktop;
+import java.net.URI;
 
 public class GamePanel extends JPanel implements ActionListener {
 
@@ -171,20 +173,20 @@ public class GamePanel extends JPanel implements ActionListener {
 
             // 2. 각 문제의 3가지 선택지 (버튼으로 나옴)
             String[][] options = {
-                    {"음식물쓰레기", "일반쓰레기", "퇴비로 사용"},                  // 1번 문제 보기
-                    {"일반쓰레기", "플라스틱류", "스티로폼류"},                   // 2번 문제 보기
-                    {"종이류", "비닐류", "일반쓰레기"},                           // 3번 문제 보기
-                    {"일반쓰레기", "음식물쓰레기", "플라스틱류"},                  // 4번 문제 보기
-                    {"하수구에 짜서 버림", "통째로 일반쓰레기", "비닐류로 배출"}, // 5번 문제 보기
-                    {"플라스틱류", "일반쓰레기", "고철류"},                       // 6번 문제 보기
-                    {"유리수거함에 넣는다", "신문지에 싸서 일반쓰레기", "플라스틱류에 넣는다"}, // 7번 문제 보기
-                    {"종이류", "변기에 버린다", "일반쓰레기"}                      // 8번 문제 보기
+                    {"음식물쓰레기", "일반쓰레기", "퇴비로 사용"},
+                    {"일반쓰레기", "플라스틱류", "스티로폼류"},
+                    {"종이류", "비닐류", "일반쓰레기"},
+                    {"일반쓰레기", "음식물쓰레기", "플라스틱류"},
+                    {"하수구에 짜서 버림", "통째로 일반쓰레기", "비닐류로 배출"},
+                    {"플라스틱류", "일반쓰레기", "고철류"},
+                    {"유리수거함에 넣는다", "신문지에 싸서 일반쓰레기", "플라스틱류에 넣는다"},
+                    {"종이류", "변기에 버린다", "일반쓰레기"}
             };
 
-            // 3. 각 문제의 정답 번호 (0번째, 1번째, 2번째 버튼 중 어느 것인지)
+            // 3. 각 문제의 정답 번호
             int[] answers = {1, 0, 2, 0, 1, 1, 1, 2};
 
-            // 4. 정답 또는 오답 시 보여줄 해설 (교육 효과!)
+            // 4. 정답 또는 오답 시 보여줄 해설
             String[] explanations = {
                     "양파/마늘 껍질 등은 동물의 사료로 쓸 수 없어 '일반쓰레기'입니다.",
                     "음식물이 배어 씻어도 지워지지 않는 컵라면 용기는 재활용이 안 돼서 '일반쓰레기'입니다.",
@@ -199,11 +201,15 @@ public class GamePanel extends JPanel implements ActionListener {
             // 🎲 0부터 7 사이의 숫자 중 하나를 랜덤으로 뽑습니다!
             int qIdx = random.nextInt(questions.length);
 
+            // 팝업창 폰트 크기를 키워서 창 전체를 크게 만드는 코드
+            UIManager.put("OptionPane.messageFont", new Font("맑은 고딕", Font.BOLD, 18));
+            UIManager.put("OptionPane.buttonFont", new Font("맑은 고딕", Font.PLAIN, 16));
+
             // 선택된 랜덤 문제로 팝업창을 띄웁니다.
             int choice = JOptionPane.showOptionDialog(
                     this,
                     questions[qIdx],
-                    " 분리수거 퀴즈",
+                    " ♻️ 분리수거 퀴즈",
                     JOptionPane.DEFAULT_OPTION,
                     JOptionPane.QUESTION_MESSAGE,
                     null,
@@ -215,6 +221,7 @@ public class GamePanel extends JPanel implements ActionListener {
             if (choice == answers[qIdx]) {
                 // 정답을 맞췄을 때
                 JOptionPane.showMessageDialog(this, "정답입니다! 🎉\n" + explanations[qIdx] + "\n\n목숨을 1개 얻고 게임을 다시 시작합니다.");
+
                 lives = 1;
                 hasRevived = true;
 
@@ -226,14 +233,54 @@ public class GamePanel extends JPanel implements ActionListener {
             } else {
                 // 틀렸거나 창을 껐을 때
                 JOptionPane.showMessageDialog(this, "오답입니다! 😢\n" + explanations[qIdx] + "\n\n게임을 종료합니다.");
+
+                int confirm = JOptionPane.showConfirmDialog(this,
+                        "분리수거에 관한 정보에 대해 알려주는 사이트로 이동하시겠습니까?",
+                        "안내",
+                        JOptionPane.OK_CANCEL_OPTION,
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                if (confirm == JOptionPane.OK_OPTION) {
+                    openRandomInfoWebpage();
+                }
+
                 isGameOver = true;
                 frame.changePanel(new ResultPanel(frame, score)); // 결과 창으로 이동
             }
         }
         // 이미 한 번 부활했는데 또 죽은 경우
         else {
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "분리수거에 관한 정보에 대해 알려주는 사이트로 이동하시겠습니까?",
+                    "안내",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            if (confirm == JOptionPane.OK_OPTION) {
+                openRandomInfoWebpage();
+            }
+
             isGameOver = true;
             frame.changePanel(new ResultPanel(frame, score));
+        }
+    }
+
+    // 랜덤으로 웹사이트를 열어주는 전용 로직
+    private void openRandomInfoWebpage() {
+        String[] infoUrls = {
+                "https://www.youtube.com/shorts/pHhG5fClttw",
+                "https://www.youtube.com/shorts/TJMzCXRylLI?si=DcYoljo-uaRipVIM",
+                "https://youtube.com/shorts/UXpXtxaUcN0?si=qdOG4rfLbx_Rudir"
+        };
+
+        int randomIdx = random.nextInt(infoUrls.length);
+
+        try {
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().browse(new URI(infoUrls[randomIdx]));
+            }
+        } catch (Exception ex) {
+            System.out.println("웹사이트를 열 수 없습니다.");
         }
     }
 
@@ -244,15 +291,16 @@ public class GamePanel extends JPanel implements ActionListener {
             // 화면 높이에서 100(캐릭터 크기+여백)을 뺀 위치를 Y좌표로 설정
             player.y = getHeight() - 100;
         }
-        // ✨ [추가] 점수에 따라 어떤 배경을 그릴지 결정하는 로직
-        Image currentBg = backgroundStages[0]; // 기본 1단계 배경 (쓰레기 가득)
 
-        if (score >= 150) {
-            currentBg = backgroundStages[3]; // 4단계: 150점 이상 (엄청 깨끗한 자연)
+        // ✨ [추가] 점수에 따라 어떤 배경을 그릴지 결정하는 로직
+        Image currentBg = backgroundStages[0]; // 기본 1단계 배경
+
+        if (score >= 300) {
+            currentBg = backgroundStages[3]; // 4단계
+        } else if (score >= 200) {
+            currentBg = backgroundStages[2]; // 3단계
         } else if (score >= 100) {
-            currentBg = backgroundStages[2]; // 3단계: 100점 이상 (많이 깨끗해짐)
-        } else if (score >= 50) {
-            currentBg = backgroundStages[1]; // 2단계: 50점 이상 (쓰레기 조금 사라짐)
+            currentBg = backgroundStages[1]; // 2단계
         }
 
         // 결정된 배경 이미지를 게임 화면 크기에 맞게 그림
