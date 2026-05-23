@@ -21,15 +21,22 @@ public class GamePanel extends JPanel implements ActionListener {
     private int fallSpeed = 5;
     private TrashType selectedType;
     private boolean isGameOver = false;
+
     // 부활 기회를 썼는지 안 썼는지 기억하는 변수 추가!
     private boolean hasRevived = false;
 
     // 2. 게임 객체
     private Player player;
     private ArrayList<Trash> trashList;
+    private ArrayList<GameItem> itemList;
     private Timer gameTimer;
     private Random random = new Random();
     private int spawnCounter = 0;
+
+    // 아이템 관련 변수
+    private int itemSpawnCounter = 0;
+    private int hintTicks = 0;
+    private boolean shieldOn = false;
 
     public GamePanel(GameFrame frame, int typeIndex) {
         this.frame = frame;
@@ -49,6 +56,7 @@ public class GamePanel extends JPanel implements ActionListener {
         // 플레이어 이미지 크기 80x80, y 위치 430
         this.player = new Player(350, 430, 80, 80, 15, selectedType);
         this.trashList = new ArrayList<>();
+        this.itemList = new ArrayList<>();
 
         // 3. 키보드 입력 이벤트
         addKeyListener(new KeyAdapter() {
@@ -81,6 +89,7 @@ public class GamePanel extends JPanel implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (!isGameOver) {
             spawnTrash();
+            spawnItem();
             updateLogic();
             repaint();
         }
@@ -118,6 +127,35 @@ public class GamePanel extends JPanel implements ActionListener {
         }
     }
 
+    private void spawnItem() {
+        itemSpawnCounter++;
+
+        if (itemSpawnCounter >= 80) {
+            int panelWidth = getWidth() > 50 ? getWidth() : 800;
+            int itemSize = 55;
+
+            // 낮은 확률로 아이템 등장
+            if (random.nextInt(100) < 8) {
+                int x = random.nextInt(Math.max(1, panelWidth - itemSize));
+                int pick = random.nextInt(100);
+
+                ItemType itemType;
+
+                if (pick < 25) {
+                    itemType = ItemType.HEART;
+                } else if (pick < 65) {
+                    itemType = ItemType.HINT;
+                } else {
+                    itemType = ItemType.SHIELD;
+                }
+
+                itemList.add(new GameItem(x, 0, itemSize, itemType));
+            }
+
+            itemSpawnCounter = 0;
+        }
+    }
+
     private void updateLogic() {
         for (int i = 0; i < trashList.size(); i++) {
             Trash t = trashList.get(i);
@@ -127,7 +165,6 @@ public class GamePanel extends JPanel implements ActionListener {
             if (player.getBounds().intersects(t.getBounds())) {
                 checkCatch(t); // 점수 판정 및 게임 오버 처리
 
-                // 👇👇👇 [수정된 부분] 안전 장치 추가 👇👇👇
                 // checkCatch 때문에 게임이 끝나서 trashList가 비워졌다면 지우지 않고 반복문을 끝냅니다.
                 if (!trashList.isEmpty() && i < trashList.size()) {
                     trashList.remove(i);
@@ -135,18 +172,48 @@ public class GamePanel extends JPanel implements ActionListener {
                 } else {
                     break; // 리스트가 비었다면(게임 종료 등) 반복문 즉시 탈출!
                 }
-                // 👆👆👆 -------------------------------- 👆👆👆
                 continue;
             }
 
             // 2. 쓰레기가 바닥으로 떨어졌을 때
             if (t.y > getHeight()) {
-                // 이때는 게임 오버로 갑자기 리스트가 비워질 일이 없으므로 기존대로 지워도 안전합니다.
                 trashList.remove(i);
                 i--;
             }
         }
+
+        for (int i = 0; i < itemList.size(); i++) {
+            GameItem item = itemList.get(i);
+            item.fall(fallSpeed);
+
+            if (player.getBounds().intersects(item.getBounds())) {
+                applyItem(item);
+                itemList.remove(i);
+                i--;
+                continue;
+            }
+
+            if (item.y > getHeight()) {
+                itemList.remove(i);
+                i--;
+            }
+        }
+
+        if (hintTicks > 0) {
+            hintTicks--;
+        }
+
         adjustDifficulty();
+    }
+
+    private void applyItem(GameItem item) {
+        if (item.getType() == ItemType.HEART) {
+            lives++;
+        } else if (item.getType() == ItemType.HINT) {
+            hintTicks = 250; // 약 5초
+        } else if (item.getType() == ItemType.SHIELD) {
+            shieldOn = true;
+        }
     }
 
     private void checkCatch(Trash t) {
@@ -155,9 +222,13 @@ public class GamePanel extends JPanel implements ActionListener {
         if (t.getType() == selectedType) {
             score += 10;
         } else {
-            lives--;
-            if (lives <= 0) {
-                gameOver();
+            if (shieldOn) {
+                shieldOn = false;
+            } else {
+                lives--;
+                if (lives <= 0) {
+                    gameOver();
+                }
             }
         }
     }
@@ -238,7 +309,11 @@ public class GamePanel extends JPanel implements ActionListener {
 
                 // 부활 직후 남아 있던 쓰레기 때문에 바로 다시 죽는 것을 막기 위해 화면을 비웁니다.
                 trashList.clear();
+                itemList.clear();
                 spawnCounter = 0;
+                itemSpawnCounter = 0;
+                hintTicks = 0;
+                shieldOn = false;
 
                 gameTimer.start(); // 게임 다시 시작
             } else {
@@ -332,6 +407,11 @@ public class GamePanel extends JPanel implements ActionListener {
 
         for (Trash t : trashList) {
             t.draw(g);
+            drawHintBorder(g, t);
+        }
+
+        for (GameItem item : itemList) {
+            item.draw(g);
         }
 
         // 👇👇👇 [수정된 부분] UI 박스 및 한글 변환 텍스트 👇👇👇
@@ -340,12 +420,12 @@ public class GamePanel extends JPanel implements ActionListener {
 
         // 1. 박스 그리기
         g2d.setColor(new Color(0, 0, 0, 160));
-        g2d.fillRoundRect(15, 15, 230, 120, 15, 15);
+        g2d.fillRoundRect(15, 15, 230, 170, 15, 15);
 
         // 박스 테두리선 그리기
         g2d.setColor(Color.WHITE);
         g2d.setStroke(new BasicStroke(2));
-        g2d.drawRoundRect(15, 15, 230, 120, 15, 15);
+        g2d.drawRoundRect(15, 15, 230, 170, 15, 15);
 
         // 2. 글꼴 설정
         g2d.setFont(new Font("맑은 고딕", Font.BOLD, 15));
@@ -383,12 +463,28 @@ public class GamePanel extends JPanel implements ActionListener {
         String scoreText  = "현재 점수 : " + score;
         String livesText  = "남은 목숨 : " + lives;
         String speedText  = "낙하 속도 : " + fallSpeed;
+        String shieldText = "보호막 : " + (shieldOn ? "ON" : "OFF");
+        String hintText = "힌트 : " + (hintTicks > 0 ? ((hintTicks / 50) + 1) + "초" : "OFF");
 
         // 4. 글씨 그리기
         g2d.drawString(targetText, 30, 40);
         g2d.drawString(scoreText, 30, 65);
         g2d.drawString(livesText, 30, 90);
         g2d.drawString(speedText, 30, 115);
+        g2d.drawString(shieldText, 30, 140);
+        g2d.drawString(hintText, 30, 165);
         // 👆👆👆 -------------------------------------------------------- 👆👆👆
+    }
+
+    private void drawHintBorder(Graphics g, Trash trash) {
+        if (hintTicks <= 0 || trash.getType() != selectedType) {
+            return;
+        }
+
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setColor(Color.GREEN);
+        g2.setStroke(new BasicStroke(4));
+        g2.drawRoundRect(trash.x - 4, trash.y - 4, trash.size + 8, trash.size + 8, 12, 12);
+        g2.dispose();
     }
 }
