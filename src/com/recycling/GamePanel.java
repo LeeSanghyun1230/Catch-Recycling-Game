@@ -240,11 +240,11 @@ public class GamePanel extends JPanel implements ActionListener {
         // ✨ [추가] 점수에 따라 어떤 배경을 그릴지 결정하는 로직
         Image currentBg = backgroundStages[0]; // 기본 1단계 배경 (쓰레기 가득)
 
-        if (score >= 150) {
+        if (score >= 300) {
             currentBg = backgroundStages[3]; // 4단계: 150점 이상 (엄청 깨끗한 자연)
-        } else if (score >= 100) {
+        } else if (score >= 200) {
             currentBg = backgroundStages[2]; // 3단계: 100점 이상 (많이 깨끗해짐)
-        } else if (score >= 50) {
+        } else if (score >=100 ) {
             currentBg = backgroundStages[1]; // 2단계: 50점 이상 (쓰레기 조금 사라짐)
         }
 
