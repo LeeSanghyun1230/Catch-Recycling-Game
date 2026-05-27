@@ -83,7 +83,11 @@ public class Trash {
     }
 
     public Rectangle getBounds() {
-        return new Rectangle(x, y, size, size);
+        // 충돌 영역(히트박스)을 시각적 이미지보다 살짝 작게 만들어 투명한 여백 탓에 죽는 것을 방지합니다.
+        int margin = 10; // 만약 여전히 닿지도 않았는데 죽는다면 이 숫자를 15~20으로 키워보세요.
+
+        // (이 클래스 안에 선언된 변수명에 따라 x, y, width, height, size 등은 맞춰서 적어주시면 됩니다)
+        return new Rectangle(x + margin, y + margin, size - (margin * 2), size - (margin * 2));
     }
 
     public TrashType getType() {

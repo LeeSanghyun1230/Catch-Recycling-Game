@@ -12,7 +12,7 @@ public class GamePanel extends JPanel implements ActionListener {
 
     private GameFrame frame;
 
-    // ✨ [수정] 단일 배경 대신, 4단계 배경 이미지를 담을 배열로 변경
+    // ✨ 단일 배경 대신, 4단계 배경 이미지를 담을 배열로 변경
     private Image[] backgroundStages = new Image[4];
 
     // 1. 게임 상태 변수
@@ -42,7 +42,7 @@ public class GamePanel extends JPanel implements ActionListener {
         this.frame = frame;
         this.selectedType = TrashType.values()[typeIndex];
 
-        // ✨ [수정] 4단계 배경 이미지 미리 불러오기 (bg_stage1 ~ bg_stage4)
+        // ✨ 4단계 배경 이미지 미리 불러오기 (bg_stage1 ~ bg_stage4)
         for (int i = 0; i < 4; i++) {
             String bgPath = "/com/recycling/images/bg_stage" + (i + 1) + ".png";
             try {
@@ -71,7 +71,7 @@ public class GamePanel extends JPanel implements ActionListener {
             }
         });
 
-        // 핵심: 마우스 클릭 없이 자동으로 키보드 포커스를 잡아주는 리스너
+        // 핵심: 마 편집 없이 자동으로 키보드 포커스를 잡아주는 리스너
         addHierarchyListener(e -> {
             if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
                 requestFocusInWindow();
@@ -157,6 +157,11 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     private void updateLogic() {
+        // 🛠️ [수정됨] 충돌 판정을 하기 전에 플레이어의 위치를 최신화(동기화) 합니다.
+        if (player != null && getHeight() > 0) {
+            player.y = getHeight() - 100;
+        }
+
         for (int i = 0; i < trashList.size(); i++) {
             Trash t = trashList.get(i);
             t.fall(fallSpeed);
@@ -217,8 +222,6 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     private void checkCatch(Trash t) {
-        // 페인트 스프레이는 Trash.java에서 type이 null로 설정됩니다.
-        // 그래서 어떤 캐릭터로 잡아도 selectedType과 같지 않아 오답 처리됩니다.
         if (t.getType() == selectedType) {
             score += 10;
         } else {
@@ -280,14 +283,11 @@ public class GamePanel extends JPanel implements ActionListener {
                     "물티슈는 종이가 아니라 합성수지(플라스틱) 재질이 포함되어 있어 '일반쓰레기'입니다."
             };
 
-            // 🎲 0부터 7 사이의 숫자 중 하나를 랜덤으로 뽑습니다!
             int qIdx = random.nextInt(questions.length);
 
-            // 팝업창 폰트 크기를 키워서 창 전체를 크게 만드는 코드
             UIManager.put("OptionPane.messageFont", new Font("맑은 고딕", Font.BOLD, 18));
             UIManager.put("OptionPane.buttonFont", new Font("맑은 고딕", Font.PLAIN, 16));
 
-            // 선택된 랜덤 문제로 팝업창을 띄웁니다.
             int choice = JOptionPane.showOptionDialog(
                     this,
                     questions[qIdx],
@@ -299,15 +299,12 @@ public class GamePanel extends JPanel implements ActionListener {
                     options[qIdx][0]
             );
 
-            // 결과 처리 로직
             if (choice == answers[qIdx]) {
-                // 정답을 맞췄을 때
                 JOptionPane.showMessageDialog(this, "정답입니다! \n" + explanations[qIdx] + "\n\n목숨을 1개 얻고 게임을 다시 시작합니다.");
 
                 lives = 1;
                 hasRevived = true;
 
-                // 부활 직후 남아 있던 쓰레기 때문에 바로 다시 죽는 것을 막기 위해 화면을 비웁니다.
                 trashList.clear();
                 itemList.clear();
                 spawnCounter = 0;
@@ -315,9 +312,8 @@ public class GamePanel extends JPanel implements ActionListener {
                 hintTicks = 0;
                 shieldOn = false;
 
-                gameTimer.start(); // 게임 다시 시작
+                gameTimer.start();
             } else {
-                // 틀렸거나 창을 껐을 때
                 JOptionPane.showMessageDialog(this, "오답입니다! \n" + explanations[qIdx] + "\n\n게임을 종료합니다.");
 
                 int confirm = JOptionPane.showConfirmDialog(this,
@@ -331,11 +327,9 @@ public class GamePanel extends JPanel implements ActionListener {
                 }
 
                 isGameOver = true;
-                frame.changePanel(new ResultPanel(frame, score)); // 결과 창으로 이동
+                frame.changePanel(new ResultPanel(frame, score));
             }
-        }
-        // 이미 한 번 부활했는데 또 죽은 경우
-        else {
+        } else {
             int confirm = JOptionPane.showConfirmDialog(this,
                     "분리수거에 관한 정보에 대해 알려주는 사이트로 이동하시겠습니까?",
                     "안내",
@@ -351,7 +345,6 @@ public class GamePanel extends JPanel implements ActionListener {
         }
     }
 
-    // 랜덤으로 웹사이트를 열어주는 전용 로직
     private void openRandomInfoWebpage() {
         String[] infoUrls = {
                 "https://www.youtube.com/shorts/pHhG5fClttw",
@@ -374,33 +367,25 @@ public class GamePanel extends JPanel implements ActionListener {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // 1. [기존 로직 유지] 플레이어 Y좌표 설정
-        if (player != null && getHeight() > 0) {
-            // 화면 높이에서 100(캐릭터 크기+여백)을 뺀 위치를 Y좌표로 설정
-            player.y = getHeight() - 100;
-        }
+        // 🛠️ [수정됨] 기존에 있던 player.y 업데이트 로직은 updateLogic()으로 이동하여 삭제되었습니다.
 
-        // 2. [기존 로직 유지] 점수에 따라 어떤 배경을 그릴지 결정
-        Image currentBg = backgroundStages[0]; // 기본 1단계 배경
+        Image currentBg = backgroundStages[0];
 
         if (score >= 300) {
-            currentBg = backgroundStages[3]; // 4단계
+            currentBg = backgroundStages[3];
         } else if (score >= 200) {
-            currentBg = backgroundStages[2]; // 3단계
+            currentBg = backgroundStages[2];
         } else if (score >= 100) {
-            currentBg = backgroundStages[1]; // 2단계
+            currentBg = backgroundStages[1];
         }
 
-        // 3. [기존 로직 유지] 배경 그리기
         if (currentBg != null) {
             g.drawImage(currentBg, 0, 0, getWidth(), getHeight(), this);
         } else {
-            // 방어 코드: 배경이 없을 때 흰색 바탕
             g.setColor(Color.WHITE);
             g.fillRect(0, 0, getWidth(), getHeight());
         }
 
-        // 4. [기존 로직 유지] 플레이어 및 쓰레기 그리기
         if (player != null) {
             player.draw(g);
         }
@@ -414,24 +399,19 @@ public class GamePanel extends JPanel implements ActionListener {
             item.draw(g);
         }
 
-        // 👇👇👇 [수정된 부분] UI 박스 및 한글 변환 텍스트 👇👇👇
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // 1. 박스 그리기
         g2d.setColor(new Color(0, 0, 0, 160));
         g2d.fillRoundRect(15, 15, 230, 170, 15, 15);
 
-        // 박스 테두리선 그리기
         g2d.setColor(Color.WHITE);
         g2d.setStroke(new BasicStroke(2));
         g2d.drawRoundRect(15, 15, 230, 170, 15, 15);
 
-        // 2. 글꼴 설정
         g2d.setFont(new Font("맑은 고딕", Font.BOLD, 15));
         g2d.setColor(Color.WHITE);
 
-        // ✨ [핵심 추가] 영어 ENUM 이름을 한글로 번역하는 스위치(조건)문
         String koreanType = "";
         switch (selectedType.name()) {
             case "PLASTIC":
@@ -453,12 +433,10 @@ public class GamePanel extends JPanel implements ActionListener {
                 koreanType = "유리병";
                 break;
             default:
-                // 혹시 위에 없는 새로운 쓰레기 타입이 추가될 경우 영어 그대로 출력
                 koreanType = selectedType.name();
                 break;
         }
 
-        // 3. 번역된 한글(koreanType)을 적용하여 문구 조립
         String targetText = "수거 종류 : " + koreanType;
         String scoreText  = "현재 점수 : " + score;
         String livesText  = "남은 목숨 : " + lives;
@@ -466,14 +444,12 @@ public class GamePanel extends JPanel implements ActionListener {
         String shieldText = "보호막 : " + (shieldOn ? "ON" : "OFF");
         String hintText = "힌트 : " + (hintTicks > 0 ? ((hintTicks / 50) + 1) + "초" : "OFF");
 
-        // 4. 글씨 그리기
         g2d.drawString(targetText, 30, 40);
         g2d.drawString(scoreText, 30, 65);
         g2d.drawString(livesText, 30, 90);
         g2d.drawString(speedText, 30, 115);
         g2d.drawString(shieldText, 30, 140);
         g2d.drawString(hintText, 30, 165);
-        // 👆👆👆 -------------------------------------------------------- 👆👆👆
     }
 
     private void drawHintBorder(Graphics g, Trash trash) {
