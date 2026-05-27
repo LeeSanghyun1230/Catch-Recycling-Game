@@ -69,11 +69,11 @@ public class ResultPanel extends JPanel {
                 g2d.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
             }
         };
+
         scoreBoxPanel.setOpaque(false); // 배경을 투명하게 해야 paintComponent에서 그린 둥근 박스가 보입니다.
         scoreBoxPanel.setLayout(new BorderLayout());
 
         // 3. ✨ 박스 내부의 여백(Padding) 설정 (위, 왼쪽, 아래, 오른쪽 순서)
-        // 이 숫자를 조절하면 글자 주변 박스 크기가 늘어나거나 줄어듭니다.
         scoreBoxPanel.setBorder(BorderFactory.createEmptyBorder(12, 25, 12, 25));
 
         // 박스 패널 안에 점수 글자 넣기
@@ -83,8 +83,6 @@ public class ResultPanel extends JPanel {
         JPanel centerPanel = new JPanel();
         centerPanel.setLayout(new GridBagLayout());
         centerPanel.setOpaque(false);
-
-        // 최종적으로 scoreLabel 대신, 예쁘게 꾸민 scoreBoxPanel을 추가합니다!
         centerPanel.add(scoreBoxPanel);
 
         restartButton = new JButton("다시 시작");
@@ -92,7 +90,7 @@ public class ResultPanel extends JPanel {
         exitButton = new JButton("종료");
 
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setOpaque(false);               // ✨ 중요: 버튼 패널도 투명하게 설정
+        buttonPanel.setOpaque(false); // ✨ 중요: 버튼 패널도 투명하게 설정
         buttonPanel.add(restartButton);
         buttonPanel.add(rankingButton);
         buttonPanel.add(exitButton);
@@ -100,8 +98,19 @@ public class ResultPanel extends JPanel {
         add(centerPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
 
-        // 기존 랭킹 저장 로직 유지
-        RankingManager.saveScore(score);
+        // 닉네임 입력 후 Firebase 랭킹 저장
+        String nickname = JOptionPane.showInputDialog(
+                this,
+                "랭킹에 등록할 닉네임을 입력하세요.",
+                "닉네임 입력",
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (nickname == null || nickname.trim().isEmpty()) {
+            nickname = "익명";
+        }
+
+        RankingManager.saveScore(nickname, score);
 
         // 버튼 이벤트 리스너 연동 유지
         restartButton.addActionListener(new ActionListener() {
@@ -137,7 +146,6 @@ public class ResultPanel extends JPanel {
 
         if (backgroundImage != null) {
             // 👇👇👇 [원하는 크기로 직접 조절하는 부분] 👇👇👇
-            // 이미지가 너무 크거나 작으면 아래 숫자(가로, 세로 픽셀)를 원하는 대로 수정하세요!
             int imgWidth = 450;  // 가로 크기
             int imgHeight = 650; // 세로 크기
             // 👆👆👆 ---------------------------------------- 👆👆👆
