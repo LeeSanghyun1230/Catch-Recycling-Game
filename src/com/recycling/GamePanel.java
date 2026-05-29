@@ -12,20 +12,30 @@ public class GamePanel extends JPanel implements ActionListener {
 
     private GameFrame frame;
 
-    // ✨ 단일 배경 대신, 4단계 배경 이미지를 담을 배열로 변경
+    // 배경 이미지 4단계
     private Image[] backgroundStages = new Image[4];
 
-    // 1. 게임 상태 변수
+    // cloud1.png ~ cloud4.png
+    private Image[] cloudImages = new Image[4];
+
+    // 구름 위치 관련 변수
+    private double cloudX = -120;
+    private double cloudY = 80;
+
+    // 구름 속도: 숫자가 클수록 빠름
+    // 기존 0.18보다 약 2배 빠른 속도
+    private double cloudSpeed = 0.7;
+
+    // 게임 상태 변수
     private int score = 0;
     private int lives = 3;
     private int fallSpeed = 5;
     private TrashType selectedType;
     private boolean isGameOver = false;
 
-    // 부활 기회를 썼는지 안 썼는지 기억하는 변수 추가!
     private boolean hasRevived = false;
 
-    // 2. 게임 객체
+    // 게임 객체
     private Player player;
     private ArrayList<Trash> trashList;
     private ArrayList<GameItem> itemList;
@@ -42,36 +52,45 @@ public class GamePanel extends JPanel implements ActionListener {
         this.frame = frame;
         this.selectedType = TrashType.values()[typeIndex];
 
-        // ✨ 4단계 배경 이미지 미리 불러오기 (bg_stage1 ~ bg_stage4)
+        // 배경 이미지 불러오기
         for (int i = 0; i < 4; i++) {
             String bgPath = "/com/recycling/images/bg_stage" + (i + 1) + ".png";
+
             try {
                 backgroundStages[i] = new ImageIcon(getClass().getResource(bgPath)).getImage();
             } catch (Exception e) {
-                System.err.println("⚠️ 배경 이미지를 찾을 수 없습니다: " + bgPath);
+                System.err.println("배경 이미지를 찾을 수 없습니다: " + bgPath);
             }
         }
 
-        // 플레이어 초기화
-        // 플레이어 이미지 크기 80x80, y 위치 430
+        // 구름 이미지 불러오기
+        for (int i = 0; i < 4; i++) {
+            String cloudPath = "/com/recycling/images/cloud" + (i + 1) + ".png";
+
+            try {
+                cloudImages[i] = new ImageIcon(getClass().getResource(cloudPath)).getImage();
+            } catch (Exception e) {
+                System.err.println("구름 이미지를 찾을 수 없습니다: " + cloudPath);
+            }
+        }
+
         this.player = new Player(350, 430, 80, 80, 15, selectedType);
         this.trashList = new ArrayList<>();
         this.itemList = new ArrayList<>();
 
-        // 3. 키보드 입력 이벤트
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_LEFT) {
                     player.moveLeft();
                 }
+
                 if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
                     player.moveRight(getWidth());
                 }
             }
         });
 
-        // 핵심: 마 편집 없이 자동으로 키보드 포커스를 잡아주는 리스너
         addHierarchyListener(e -> {
             if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
                 requestFocusInWindow();
@@ -80,7 +99,6 @@ public class GamePanel extends JPanel implements ActionListener {
 
         setFocusable(true);
 
-        // 게임 루프 시작
         gameTimer = new Timer(20, this);
         gameTimer.start();
     }
@@ -88,6 +106,7 @@ public class GamePanel extends JPanel implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (!isGameOver) {
+            updateCloud();
             spawnTrash();
             spawnItem();
             updateLogic();
@@ -95,28 +114,102 @@ public class GamePanel extends JPanel implements ActionListener {
         }
     }
 
+    // 현재 점수에 맞는 배경 단계 번호 반환
+    // 0 = bg_stage1, cloud1
+    // 1 = bg_stage2, cloud2
+    // 2 = bg_stage3, cloud3
+    // 3 = bg_stage4, cloud4
+    private int getCurrentStageIndex() {
+        if (score >= 300) {
+            return 3;
+        } else if (score >= 200) {
+            return 2;
+        } else if (score >= 100) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    // 구름 이동
+    private void updateCloud() {
+        int panelWidth = getWidth() > 0 ? getWidth() : 800;
+
+        cloudX += cloudSpeed;
+
+        // 구름이 오른쪽으로 사라지면 왼쪽에서 다시 등장
+        // 너무 멀리 보내지 않도록 -panelWidth * 0.45로 조정
+        if (cloudX > panelWidth + 80) {
+            cloudX = -panelWidth * 0.45;
+
+            // 다시 등장할 때 y 위치를 살짝만 바꿔서 자연스럽게
+            cloudY = 65 + random.nextInt(45);
+        }
+    }
+
+    // 구름 그리기
+    private void drawCloud(Graphics2D g2d) {
+        int stageIndex = getCurrentStageIndex();
+        Image cloudImage = cloudImages[stageIndex];
+
+        if (cloudImage == null) {
+            return;
+        }
+
+        int panelWidth = getWidth() > 0 ? getWidth() : 800;
+        int panelHeight = getHeight() > 0 ? getHeight() : 520;
+
+        // 구름 크기
+        // 화면보다 크게 잡아서 작은 스티커처럼 보이지 않게 함
+        int cloudWidth = (int) (panelWidth * 1.45);
+        int cloudHeight = (int) (panelHeight * 0.42);
+
+        // 구름 투명도
+        // 너무 진하면 0.14f 정도로 낮추고, 너무 안 보이면 0.25f 정도로 올리면 됨
+        float cloudAlpha = 0.20f;
+
+        Composite oldComposite = g2d.getComposite();
+
+        g2d.setRenderingHint(
+                RenderingHints.KEY_INTERPOLATION,
+                RenderingHints.VALUE_INTERPOLATION_BILINEAR
+        );
+
+        g2d.setComposite(
+                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, cloudAlpha)
+        );
+
+        g2d.drawImage(
+                cloudImage,
+                (int) cloudX,
+                (int) cloudY,
+                cloudWidth,
+                cloudHeight,
+                this
+        );
+
+        g2d.setComposite(oldComposite);
+    }
+
     private void spawnTrash() {
         spawnCounter++;
+
         if (spawnCounter >= 50) {
             int panelWidth = getWidth() > 50 ? getWidth() : 800;
             int trashSize = 65;
             TrashType[] types = TrashType.values();
 
-            // ✨ 한 번에 생성할 개수
             int spawnCount = 2;
-
-            // ✨ 화면을 생성할 개수만큼 N등분 합니다. (2개면 화면을 반으로 나눔)
             int sectionWidth = panelWidth / spawnCount;
 
             for (int i = 0; i < spawnCount; i++) {
-                // 구역의 시작점 계산 (i=0이면 0부터, i=1이면 절반부터)
                 int startX = i * sectionWidth;
 
-                // 해당 구역 안에서 쓰레기가 화면 밖으로 나가지 않게 랜덤 값 뽑기
                 int maxRandom = sectionWidth - trashSize;
-                if (maxRandom <= 0) maxRandom = 1; // 화면이 너무 작을 때를 대비한 안전장치
+                if (maxRandom <= 0) {
+                    maxRandom = 1;
+                }
 
-                // 시작점 + 구역 내 랜덤 위치
                 int x = startX + random.nextInt(maxRandom);
 
                 TrashType randomType = types[random.nextInt(types.length)];
@@ -134,7 +227,6 @@ public class GamePanel extends JPanel implements ActionListener {
             int panelWidth = getWidth() > 50 ? getWidth() : 800;
             int itemSize = 55;
 
-            // 낮은 확률로 아이템 등장
             if (random.nextInt(100) < 8) {
                 int x = random.nextInt(Math.max(1, panelWidth - itemSize));
                 int pick = random.nextInt(100);
@@ -157,30 +249,23 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     private void updateLogic() {
-        // 🛠️ [수정됨] 충돌 판정을 하기 전에 플레이어의 위치를 최신화(동기화) 합니다.
-        if (player != null && getHeight() > 0) {
-            player.y = getHeight() - 100;
-        }
-
         for (int i = 0; i < trashList.size(); i++) {
             Trash t = trashList.get(i);
             t.fall(fallSpeed);
 
-            // 1. 플레이어와 쓰레기가 부딪혔을 때
             if (player.getBounds().intersects(t.getBounds())) {
-                checkCatch(t); // 점수 판정 및 게임 오버 처리
+                checkCatch(t);
 
-                // checkCatch 때문에 게임이 끝나서 trashList가 비워졌다면 지우지 않고 반복문을 끝냅니다.
                 if (!trashList.isEmpty() && i < trashList.size()) {
                     trashList.remove(i);
-                    i--; // 지웠으니 인덱스를 하나 당겨줌
+                    i--;
                 } else {
-                    break; // 리스트가 비었다면(게임 종료 등) 반복문 즉시 탈출!
+                    break;
                 }
+
                 continue;
             }
 
-            // 2. 쓰레기가 바닥으로 떨어졌을 때
             if (t.y > getHeight()) {
                 trashList.remove(i);
                 i--;
@@ -215,7 +300,7 @@ public class GamePanel extends JPanel implements ActionListener {
         if (item.getType() == ItemType.HEART) {
             lives++;
         } else if (item.getType() == ItemType.HINT) {
-            hintTicks = 250; // 약 5초
+            hintTicks = 250;
         } else if (item.getType() == ItemType.SHIELD) {
             shieldOn = true;
         }
@@ -229,6 +314,7 @@ public class GamePanel extends JPanel implements ActionListener {
                 shieldOn = false;
             } else {
                 lives--;
+
                 if (lives <= 0) {
                     gameOver();
                 }
@@ -241,10 +327,9 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     private void gameOver() {
-        gameTimer.stop(); // 게임 일시 정지
+        gameTimer.stop();
 
         if (!hasRevived) {
-            // 1. 8개의 퀴즈 문제 목록
             String[] questions = {
                     " [부활 찬스] 양파 껍질, 대파 뿌리의 올바른 배출 방법은?",
                     " [부활 찬스] 국물이 배어 지워지지 않는 컵라면 용기는?",
@@ -256,7 +341,6 @@ public class GamePanel extends JPanel implements ActionListener {
                     " [부활 찬스] 사용하고 난 물티슈의 올바른 배출 방법은?"
             };
 
-            // 2. 각 문제의 3가지 선택지 (버튼으로 나옴)
             String[][] options = {
                     {"음식물쓰레기", "일반쓰레기", "퇴비로 사용"},
                     {"일반쓰레기", "플라스틱류", "스티로폼류"},
@@ -268,10 +352,8 @@ public class GamePanel extends JPanel implements ActionListener {
                     {"종이류", "변기에 버린다", "일반쓰레기"}
             };
 
-            // 3. 각 문제의 정답 번호
             int[] answers = {1, 0, 2, 0, 1, 1, 1, 2};
 
-            // 4. 정답 또는 오답 시 보여줄 해설
             String[] explanations = {
                     "양파/마늘 껍질 등은 동물의 사료로 쓸 수 없어 '일반쓰레기'입니다.",
                     "음식물이 배어 씻어도 지워지지 않는 컵라면 용기는 재활용이 안 돼서 '일반쓰레기'입니다.",
@@ -291,7 +373,7 @@ public class GamePanel extends JPanel implements ActionListener {
             int choice = JOptionPane.showOptionDialog(
                     this,
                     questions[qIdx],
-                    " ♻️ 분리수거 퀴즈",
+                    "분리수거 퀴즈",
                     JOptionPane.DEFAULT_OPTION,
                     JOptionPane.QUESTION_MESSAGE,
                     null,
@@ -300,7 +382,10 @@ public class GamePanel extends JPanel implements ActionListener {
             );
 
             if (choice == answers[qIdx]) {
-                JOptionPane.showMessageDialog(this, "정답입니다! \n" + explanations[qIdx] + "\n\n목숨을 1개 얻고 게임을 다시 시작합니다.");
+                JOptionPane.showMessageDialog(
+                        this,
+                        "정답입니다! \n" + explanations[qIdx] + "\n\n목숨을 1개 얻고 게임을 다시 시작합니다."
+                );
 
                 lives = 1;
                 hasRevived = true;
@@ -314,13 +399,18 @@ public class GamePanel extends JPanel implements ActionListener {
 
                 gameTimer.start();
             } else {
-                JOptionPane.showMessageDialog(this, "오답입니다! \n" + explanations[qIdx] + "\n\n게임을 종료합니다.");
+                JOptionPane.showMessageDialog(
+                        this,
+                        "오답입니다! \n" + explanations[qIdx] + "\n\n게임을 종료합니다."
+                );
 
-                int confirm = JOptionPane.showConfirmDialog(this,
+                int confirm = JOptionPane.showConfirmDialog(
+                        this,
                         "분리수거에 관한 정보에 대해 알려주는 사이트로 이동하시겠습니까?",
                         "안내",
                         JOptionPane.OK_CANCEL_OPTION,
-                        JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.INFORMATION_MESSAGE
+                );
 
                 if (confirm == JOptionPane.OK_OPTION) {
                     openRandomInfoWebpage();
@@ -330,11 +420,13 @@ public class GamePanel extends JPanel implements ActionListener {
                 frame.changePanel(new ResultPanel(frame, score));
             }
         } else {
-            int confirm = JOptionPane.showConfirmDialog(this,
+            int confirm = JOptionPane.showConfirmDialog(
+                    this,
                     "분리수거에 관한 정보에 대해 알려주는 사이트로 이동하시겠습니까?",
                     "안내",
                     JOptionPane.OK_CANCEL_OPTION,
-                    JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.INFORMATION_MESSAGE
+            );
 
             if (confirm == JOptionPane.OK_OPTION) {
                 openRandomInfoWebpage();
@@ -367,18 +459,14 @@ public class GamePanel extends JPanel implements ActionListener {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // 🛠️ [수정됨] 기존에 있던 player.y 업데이트 로직은 updateLogic()으로 이동하여 삭제되었습니다.
-
-        Image currentBg = backgroundStages[0];
-
-        if (score >= 300) {
-            currentBg = backgroundStages[3];
-        } else if (score >= 200) {
-            currentBg = backgroundStages[2];
-        } else if (score >= 100) {
-            currentBg = backgroundStages[1];
+        if (player != null && getHeight() > 0) {
+            player.y = getHeight() - 100;
         }
 
+        int stageIndex = getCurrentStageIndex();
+        Image currentBg = backgroundStages[stageIndex];
+
+        // 배경 그리기
         if (currentBg != null) {
             g.drawImage(currentBg, 0, 0, getWidth(), getHeight(), this);
         } else {
@@ -386,21 +474,34 @@ public class GamePanel extends JPanel implements ActionListener {
             g.fillRect(0, 0, getWidth(), getHeight());
         }
 
+        // 구름 그리기: 배경 위, 캐릭터/쓰레기 뒤
+        Graphics2D cloudG2d = (Graphics2D) g.create();
+        drawCloud(cloudG2d);
+        cloudG2d.dispose();
+
+        // 플레이어 그리기
         if (player != null) {
             player.draw(g);
         }
 
+        // 쓰레기 그리기
         for (Trash t : trashList) {
             t.draw(g);
             drawHintBorder(g, t);
         }
 
+        // 아이템 그리기
         for (GameItem item : itemList) {
             item.draw(g);
         }
 
+        // UI 그리기
         Graphics2D g2d = (Graphics2D) g;
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        g2d.setRenderingHint(
+                RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON
+        );
 
         g2d.setColor(new Color(0, 0, 0, 160));
         g2d.fillRoundRect(15, 15, 230, 170, 15, 15);
@@ -412,7 +513,8 @@ public class GamePanel extends JPanel implements ActionListener {
         g2d.setFont(new Font("맑은 고딕", Font.BOLD, 15));
         g2d.setColor(Color.WHITE);
 
-        String koreanType = "";
+        String koreanType;
+
         switch (selectedType.name()) {
             case "PLASTIC":
                 koreanType = "플라스틱";
@@ -438,9 +540,9 @@ public class GamePanel extends JPanel implements ActionListener {
         }
 
         String targetText = "수거 종류 : " + koreanType;
-        String scoreText  = "현재 점수 : " + score;
-        String livesText  = "남은 목숨 : " + lives;
-        String speedText  = "낙하 속도 : " + fallSpeed;
+        String scoreText = "현재 점수 : " + score;
+        String livesText = "남은 목숨 : " + lives;
+        String speedText = "낙하 속도 : " + fallSpeed;
         String shieldText = "보호막 : " + (shieldOn ? "ON" : "OFF");
         String hintText = "힌트 : " + (hintTicks > 0 ? ((hintTicks / 50) + 1) + "초" : "OFF");
 
@@ -460,7 +562,14 @@ public class GamePanel extends JPanel implements ActionListener {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setColor(Color.GREEN);
         g2.setStroke(new BasicStroke(4));
-        g2.drawRoundRect(trash.x - 4, trash.y - 4, trash.size + 8, trash.size + 8, 12, 12);
+        g2.drawRoundRect(
+                trash.x - 4,
+                trash.y - 4,
+                trash.size + 8,
+                trash.size + 8,
+                12,
+                12
+        );
         g2.dispose();
     }
 }
