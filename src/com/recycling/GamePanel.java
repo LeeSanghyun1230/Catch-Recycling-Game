@@ -15,7 +15,7 @@ public class GamePanel extends JPanel implements ActionListener {
     // 배경 이미지 4단계
     private Image[] backgroundStages = new Image[4];
 
-    // cloud1.png ~ cloud3.png
+    // cloud1.png ~ cloud4.png
     private Image[] cloudImages = new Image[4];
 
     // 구름 위치 관련 변수
