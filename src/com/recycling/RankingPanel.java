@@ -43,9 +43,9 @@ public class RankingPanel extends JPanel {
     }
 
     private void showRanking() {
-        List<Integer> scores = RankingManager.loadScores();
+        List<RankingManager.RankingEntry> rankings = RankingManager.loadRankingEntries();
 
-        if (scores.isEmpty()) {
+        if (rankings.isEmpty()) {
             rankingArea.setText("아직 저장된 랭킹이 없습니다.");
             return;
         }
@@ -53,8 +53,14 @@ public class RankingPanel extends JPanel {
         StringBuilder sb = new StringBuilder();
         int rank = 1;
 
-        for (int score : scores) {
-            sb.append(rank).append("등 : ").append(score).append("점\n");
+        for (RankingManager.RankingEntry entry : rankings) {
+            sb.append(rank)
+                    .append("등 : ")
+                    .append(entry.getNickname())
+                    .append(" - ")
+                    .append(entry.getScore())
+                    .append("점\n");
+
             rank++;
 
             if (rank > 10) {
