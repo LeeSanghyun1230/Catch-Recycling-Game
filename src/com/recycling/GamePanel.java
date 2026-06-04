@@ -544,7 +544,7 @@ public class GamePanel extends JPanel implements ActionListener {
         String livesText = "남은 목숨 : " + lives;
         String speedText = "낙하 속도 : " + fallSpeed;
         String shieldText = "보호막 : " + (shieldOn ? "ON" : "OFF");
-        String hintText = "힌트 : " + (hintTicks > 0 ? ((hintTicks / 50) + 1) + "초" : "OFF");
+        String hintText = "힌트: " + (hintTicks > 0 ? ((hintTicks / 50) + 1) + "초" : "OFF");
 
         g2d.drawString(targetText, 30, 40);
         g2d.drawString(scoreText, 30, 65);
