@@ -48,6 +48,9 @@ public class GamePanel extends JPanel implements ActionListener {
     private int hintTicks = 0;
     private boolean shieldOn = false;
 
+    // 사운드 매니저 추가
+    private SoundManager bgmManager;
+
     public GamePanel(GameFrame frame, int typeIndex) {
         this.frame = frame;
         this.selectedType = TrashType.values()[typeIndex];
@@ -101,6 +104,10 @@ public class GamePanel extends JPanel implements ActionListener {
 
         gameTimer = new Timer(20, this);
         gameTimer.start();
+
+        // 배경음악 시작 (BGM 출처: Pixabay)
+        bgmManager = new SoundManager();
+        bgmManager.playBGM("/com/recycling/sounds/bgm.wav");
     }
 
     @Override
@@ -115,10 +122,6 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     // 현재 점수에 맞는 배경 단계 번호 반환
-    // 0 = bg_stage1, cloud1
-    // 1 = bg_stage2, cloud2
-    // 2 = bg_stage3, cloud3
-    // 3 = bg_stage4, cloud4
     private int getCurrentStageIndex() {
         if (score >= 300) {
             return 3;
@@ -137,12 +140,8 @@ public class GamePanel extends JPanel implements ActionListener {
 
         cloudX += cloudSpeed;
 
-        // 구름이 오른쪽으로 사라지면 왼쪽에서 다시 등장
-        // 너무 멀리 보내지 않도록 -panelWidth * 0.45로 조정
         if (cloudX > panelWidth + 80) {
             cloudX = -panelWidth * 0.45;
-
-            // 다시 등장할 때 y 위치를 살짝만 바꿔서 자연스럽게
             cloudY = 65 + random.nextInt(45);
         }
     }
@@ -159,13 +158,9 @@ public class GamePanel extends JPanel implements ActionListener {
         int panelWidth = getWidth() > 0 ? getWidth() : 800;
         int panelHeight = getHeight() > 0 ? getHeight() : 520;
 
-        // 구름 크기
-        // 화면보다 크게 잡아서 작은 스티커처럼 보이지 않게 함
         int cloudWidth = (int) (panelWidth * 1.45);
         int cloudHeight = (int) (panelHeight * 0.42);
 
-        // 구름 투명도
-        // 너무 진하면 0.14f 정도로 낮추고, 너무 안 보이면 0.25f 정도로 올리면 됨
         float cloudAlpha = 0.20f;
 
         Composite oldComposite = g2d.getComposite();
@@ -296,7 +291,10 @@ public class GamePanel extends JPanel implements ActionListener {
         adjustDifficulty();
     }
 
+    // 특수 아이템을 먹었을 때 처리 (효과음 포함)
     private void applyItem(GameItem item) {
+        if (bgmManager != null) bgmManager.playSFX("/com/recycling/sounds/item_get.wav");
+
         if (item.getType() == ItemType.HEART) {
             lives++;
         } else if (item.getType() == ItemType.HINT) {
@@ -306,15 +304,26 @@ public class GamePanel extends JPanel implements ActionListener {
         }
     }
 
+    // 쓰레기를 먹었을 때 처리 (효과음 포함)
     private void checkCatch(Trash t) {
+        // 1. 정답 쓰레기를 먹었을 때
         if (t.getType() == selectedType) {
             score += 10;
-        } else {
+            if (bgmManager != null) bgmManager.playSFX("/com/recycling/sounds/eat.wav");
+        }
+        // 2. 오답 쓰레기를 먹었을 때
+        else {
+            // 2-1. 보호막 아이템이 켜져 있는 경우
             if (shieldOn) {
                 shieldOn = false;
-            } else {
+                if (bgmManager != null) bgmManager.playSFX("/com/recycling/sounds/shield_break.wav");
+            }
+            // 2-2. 보호막이 없는 맨몸인 경우
+            else {
                 lives--;
+                if (bgmManager != null) bgmManager.playSFX("/com/recycling/sounds/wrong.wav");
 
+                // 목숨이 0개가 되면 게임 오버 처리
                 if (lives <= 0) {
                     gameOver();
                 }
@@ -328,6 +337,11 @@ public class GamePanel extends JPanel implements ActionListener {
 
     private void gameOver() {
         gameTimer.stop();
+
+        // 게임 오버 시 BGM 정지
+        if (bgmManager != null) {
+            bgmManager.stopBGM();
+        }
 
         if (!hasRevived) {
             String[] questions = {
@@ -397,6 +411,10 @@ public class GamePanel extends JPanel implements ActionListener {
                 hintTicks = 0;
                 shieldOn = false;
 
+                // 다시 시작할 때 BGM 다시 틀기
+                if (bgmManager != null) {
+                    bgmManager.playBGM("/com/recycling/sounds/bgm.wav");
+                }
                 gameTimer.start();
             } else {
                 JOptionPane.showMessageDialog(
